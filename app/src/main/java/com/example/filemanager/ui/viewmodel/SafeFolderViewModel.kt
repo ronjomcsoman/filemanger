@@ -40,6 +40,11 @@ class SafeFolderViewModel(application: Application) : AndroidViewModel(applicati
         return false
     }
 
+    fun unlockBiometric() {
+        _isLocked.value = false
+        loadSafeFiles()
+    }
+
     fun loadSafeFiles() {
         viewModelScope.launch {
             _safeFiles.value = repository.getSafeFiles()

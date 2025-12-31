@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -63,11 +64,23 @@ fun SafeFolderScreen(
             ) {
                 var pin by remember { mutableStateOf("") }
                 var error by remember { mutableStateOf("") }
+                val context = LocalContext.current
+                val activity = context as? FragmentActivity
+
+                LaunchedEffect(isLocked, hasPin) {
+                    if (isLocked && hasPin && activity != null && BiometricHelper.isBiometricAvailable(context)) {
+                        BiometricHelper.authenticate(
+                            activity,
+                            onSuccess = { viewModel.unlockBiometric() },
+                            onError = { error = "Biometric Error: $it" }
+                        )
+                    }
+                }
 
                 if (!hasPin) {
                     Text("Set a PIN for Safe Folder")
                 } else {
-                    Text("Enter PIN")
+                    Text("Enter PIN or use Biometrics")
                 }
 
                 OutlinedTextField(
@@ -78,21 +91,40 @@ fun SafeFolderScreen(
                     isError = error.isNotEmpty()
                 )
                 if (error.isNotEmpty()) {
-                    Text(error)
+                    Text(error, color = Color.Red)
                 }
-                Button(
-                    onClick = {
-                        if (!hasPin) {
-                            viewModel.setPin(pin)
-                        } else {
-                            if (!viewModel.unlock(pin)) {
-                                error = "Incorrect PIN"
+                
+                Row(
+                    modifier = Modifier.padding(top = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            if (!hasPin) {
+                                viewModel.setPin(pin)
+                            } else {
+                                if (!viewModel.unlock(pin)) {
+                                    error = "Incorrect PIN"
+                                }
                             }
                         }
-                    },
-                    modifier = Modifier.padding(top = 16.dp)
-                ) {
-                    Text(if (!hasPin) "Set PIN" else "Unlock")
+                    ) {
+                        Text(if (!hasPin) "Set PIN" else "Unlock with PIN")
+                    }
+
+                    if (hasPin && activity != null && BiometricHelper.isBiometricAvailable(context)) {
+                        OutlinedButton(
+                            onClick = {
+                                BiometricHelper.authenticate(
+                                    activity,
+                                    onSuccess = { viewModel.unlockBiometric() },
+                                    onError = { error = "Biometric Error: $it" }
+                                )
+                            }
+                        ) {
+                            Text("Biometrics")
+                        }
+                    }
                 }
             }
         } else {
