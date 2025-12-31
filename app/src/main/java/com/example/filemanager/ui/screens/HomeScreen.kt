@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import kotlinx.coroutines.launch
@@ -124,7 +125,7 @@ fun HomeScreen(
                          scope.launch { drawerState.close() }
                          onNavigateToSettings()
                     },
-                    icon = { Icon(androidx.compose.material.icons.filled.Settings, contentDescription = null) },
+                    icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
             }

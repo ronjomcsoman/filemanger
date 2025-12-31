@@ -47,6 +47,7 @@ fun AppNavigation(navController: NavHostController) {
             )
         }
         composable(
+            route = Screen.FileExplorer.route,
             arguments = listOf(
                 navArgument("path") { type = NavType.StringType; nullable = true },
                 navArgument("category") { type = NavType.StringType; nullable = true }
