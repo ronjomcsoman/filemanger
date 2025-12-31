@@ -1,3 +1,5 @@
+package com.example.filemanager.ui.viewmodel
+
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
