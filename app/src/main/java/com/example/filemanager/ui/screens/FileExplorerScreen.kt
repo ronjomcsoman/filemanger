@@ -57,12 +57,15 @@ import androidx.activity.compose.BackHandler
 @Composable
 fun FileExplorerScreen(
     initialPath: String? = null,
+    category: String? = null,
     onBack: () -> Unit,
     viewModel: FileExplorerViewModel = viewModel()
 ) {
     // Initialize with path if provided and not already set
-    androidx.compose.runtime.LaunchedEffect(initialPath) {
-        if (initialPath != null && viewModel.currentPath.value == null) {
+    androidx.compose.runtime.LaunchedEffect(initialPath, category) {
+        if (category != null) {
+            viewModel.filterByCategory(category)
+        } else if (initialPath != null && viewModel.currentPath.value == null) {
             viewModel.loadFiles(initialPath)
         } else if (viewModel.currentPath.value == null) {
             viewModel.loadFiles(null)

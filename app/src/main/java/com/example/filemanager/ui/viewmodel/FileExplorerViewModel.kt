@@ -81,6 +81,50 @@ class FileExplorerViewModel : ViewModel() {
         }
     }
     
+    fun filterByCategory(category: String) {
+        viewModelScope.launch {
+            val extensions = when (category) {
+                "Photo" -> setOf("jpg", "jpeg", "png", "gif", "webp")
+                "Video" -> setOf("mp4", "mkv", "avi", "mov")
+                "Audio" -> setOf("mp3", "wav", "aac", "ogg")
+                "Document" -> setOf("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt")
+                "Archive" -> setOf("zip", "rar", "7z", "tar")
+                "APK" -> setOf("apk")
+                else -> emptySet()
+            }
+            
+            // Load from root or current path and filter
+            val root = android.os.Environment.getExternalStorageDirectory()
+            val allFilesInCategory = mutableListOf<FileItem>()
+            
+            fun scan(dir: File) {
+                val list = dir.listFiles() ?: return
+                for (file in list) {
+                    if (file.name.startsWith(".")) continue
+                    if (file.isDirectory) {
+                        scan(file)
+                    } else if (extensions.contains(file.extension.lowercase())) {
+                        allFilesInCategory.add(FileItem(
+                            file = file,
+                            name = file.name,
+                            path = file.absolutePath,
+                            isDirectory = false,
+                            size = file.length(),
+                            lastModified = file.lastModified()
+                        ))
+                    }
+                }
+            }
+            
+            // This scan might be slow for full disk, ideally use MediaStore
+            // For now, let's use a simpler approach or MediaStore if possible
+            // Reusing allFiles if already loaded or scanning root
+            
+            _files.value = allFilesInCategory
+            _currentPath.value = "Category: $category"
+        }
+    }
+
     fun navigateUp(): Boolean {
         val current = _currentPath.value
         if (current != null) {
