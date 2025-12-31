@@ -26,11 +26,23 @@ jobs:
       with:
         gradle-version: 8.2
 
-    - name: Build with Gradle
-      run: gradle assembleDebug --stacktrace
+    - name: Generate Release Keystore
+      run: |
+        keytool -genkeypair -v \
+        -keystore app/release.jks \
+        -keyalg RSA \
+        -keysize 2048 \
+        -validity 10000 \
+        -alias key0 \
+        -dname "CN=FileManager, OU=Mobile, O=FileCorp, L=Unknown, ST=Unknown, C=US" \
+        -storepass password \
+        -keypass password
+
+    - name: Build Release APK
+      run: gradle assembleRelease --stacktrace
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: app-debug
-        path: app/build/outputs/apk/debug/app-debug.apk
+        name: app-release
+        path: app/build/outputs/apk/release/app-release.apk
