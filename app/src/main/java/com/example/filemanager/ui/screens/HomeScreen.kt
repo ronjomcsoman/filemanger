@@ -1,11 +1,16 @@
 package com.example.filemanager.ui.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -152,94 +157,170 @@ fun HomeScreen(
                 )
             }
         ) { paddingValues ->
-            val gridItems = listOf(
-                Triple("Main Storage", Icons.Filled.Storage, { onNavigateToFileExplorer(null) }),
-                Triple("Downloads", Icons.Filled.Download, { 
-                     val downloadPath = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS).absolutePath
-                     onNavigateToFileExplorer(downloadPath)
-                }),
-                Triple("Recycle Bin", Icons.Filled.Delete, onNavigateToRecycleBin),
-                Triple("Safe Folder", Icons.Filled.Lock, onNavigateToSafeFolder)
-            )
 
+
+        ) { paddingValues ->
             androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
                 columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(3),
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(16.dp),
+                    .background(androidx.compose.ui.graphics.Color(0xFFF5F5F5)) // Light Gray Background
+                    .padding(paddingValues),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Storage Dashboard (Full Width)
                 item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(3) }) {
-                     // ... (Keeping existing dashboard code logic) ...
                      androidx.compose.material3.Card(
-                        modifier = Modifier.fillMaxWidth().height(200.dp),
-                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color(0xFF03A9F4))
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(220.dp),
+                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color(0xFF2196F3)), // Cx Blue
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp) // Flat styling at top if desired, or keep rounded
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxSize().padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Circular Gauge
-                            androidx.compose.foundation.layout.Box(
-                                modifier = Modifier.weight(1f),
-                                contentAlignment = Alignment.Center
+                        Column(modifier = Modifier.fillMaxSize()) {
+                             Row(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                 val used = storageStats?.first ?: 0L
-                                 val total = storageStats?.second ?: 1L
-                                 val progressValue = if (total > 0) used.toFloat() / total.toFloat() else 0f
-                                 val percent = (progressValue * 100).toInt()
-                                 
-                                 androidx.compose.material3.CircularProgressIndicator(
-                                     progress = progressValue,
-                                     modifier = Modifier.size(100.dp),
-                                     color = androidx.compose.ui.graphics.Color.White,
-                                     trackColor = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.3f),
-                                 )
-                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                     Text("$percent%", color = androidx.compose.ui.graphics.Color.White, style = androidx.compose.material3.MaterialTheme.typography.headlineMedium)
-                                     Text("Used", color = androidx.compose.ui.graphics.Color.White)
-                                 }
+                                // Circular Gauge
+                                androidx.compose.foundation.layout.Box(
+                                    modifier = Modifier.weight(1f),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                     val used = storageStats?.first ?: 0L
+                                     val total = storageStats?.second ?: 1L
+                                     val progressValue = if (total > 0) used.toFloat() / total.toFloat() else 0f
+                                     val percent = (progressValue * 100).toInt()
+                                     
+                                     // Track
+                                     androidx.compose.material3.CircularProgressIndicator(
+                                         progress = 1f,
+                                         modifier = Modifier.size(120.dp),
+                                         color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.3f),
+                                         strokeWidth = 8.dp
+                                     )
+                                     // Progress
+                                     androidx.compose.material3.CircularProgressIndicator(
+                                         progress = progressValue,
+                                         modifier = Modifier.size(120.dp),
+                                         color = androidx.compose.ui.graphics.Color.White,
+                                         strokeWidth = 8.dp
+                                     )
+                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                         Text("$percent%", color = androidx.compose.ui.graphics.Color.White, style = androidx.compose.material3.MaterialTheme.typography.displaySmall)
+                                         Text("Main storage", color = androidx.compose.ui.graphics.Color.White, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+                                         Text(
+                                             "${com.example.filemanager.utils.StorageUtils.formatSize(used)} / ${com.example.filemanager.utils.StorageUtils.formatSize(total)}", 
+                                             color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.7f),
+                                             style = androidx.compose.material3.MaterialTheme.typography.labelSmall
+                                         )
+                                     }
+                                }
+                                
+                                // Stats Column
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(start = 16.dp),
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                                        Text("Images", color = androidx.compose.ui.graphics.Color.White)
+                                        Text(com.example.filemanager.utils.StorageUtils.formatSize(categorySizes["Images"] ?: 0), color = androidx.compose.ui.graphics.Color.White)
+                                    }
+                                    Spacer(Modifier.height(8.dp))
+                                    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                                        Text("Audio", color = androidx.compose.ui.graphics.Color.White)
+                                        Text(com.example.filemanager.utils.StorageUtils.formatSize(categorySizes["Audio"] ?: 0), color = androidx.compose.ui.graphics.Color.White)
+                                    }
+                                    Spacer(Modifier.height(8.dp))
+                                    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                                        Text("Videos", color = androidx.compose.ui.graphics.Color.White)
+                                        Text(com.example.filemanager.utils.StorageUtils.formatSize(categorySizes["Videos"] ?: 0), color = androidx.compose.ui.graphics.Color.White)
+                                    }
+                                }
                             }
                             
-                            // Stats Column
-                            Column(
-                                modifier = Modifier.weight(1f).padding(start = 16.dp),
-                                verticalArrangement = Arrangement.Center
+                            // Analyze Button (Visual Only)
+                            androidx.compose.foundation.layout.Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 16.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Text("Images: ${com.example.filemanager.utils.StorageUtils.formatSize(categorySizes["Images"] ?: 0)}", color = androidx.compose.ui.graphics.Color.White)
-                                Spacer(Modifier.height(8.dp))
-                                Text("Audio: ${com.example.filemanager.utils.StorageUtils.formatSize(categorySizes["Audio"] ?: 0)}", color = androidx.compose.ui.graphics.Color.White)
-                                Spacer(Modifier.height(8.dp))
-                                Text("Videos: ${com.example.filemanager.utils.StorageUtils.formatSize(categorySizes["Videos"] ?: 0)}", color = androidx.compose.ui.graphics.Color.White)
+                                Button(
+                                    onClick = { /* TODO: Implement Analytics */ },
+                                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                        containerColor = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.2f),
+                                        contentColor = androidx.compose.ui.graphics.Color.White
+                                    ),
+                                    modifier = Modifier.height(36.dp)
+                                ) {
+                                    Text("ANALYZE")
+                                }
                             }
                         }
                     }
                 }
 
-                // Grid Header (Full Width)
+                // Grid Header (Tabs Style)
                 item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(3) }) {
-                    Text("Local", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(androidx.compose.ui.graphics.Color.White)
+                            .padding(vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                             Text("LOCAL", color = androidx.compose.ui.graphics.Color(0xFF2196F3), style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
+                             androidx.compose.foundation.layout.Box(modifier = Modifier.padding(top = 4.dp).size(width = 40.dp, height = 2.dp).background(androidx.compose.ui.graphics.Color(0xFF2196F3)))
+                         }
+                         Text("LIBRARY", color = androidx.compose.ui.graphics.Color.Gray, style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
+                         Text("NETWORK", color = androidx.compose.ui.graphics.Color.Gray, style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
+                    }
                 }
 
                 // Grid Items
-                items(gridItems.size) { index ->
-                    val item = gridItems[index]
-                    androidx.compose.material3.Card(
-                        onClick = item.third,
-                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.White),
-                        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 2.dp)
+                val gridData = listOf(
+                    Triple("Main storage", Icons.Filled.Storage, androidx.compose.ui.graphics.Color(0xFFFF9800)), // Orange
+                    Triple("Downloads", Icons.Filled.Download, androidx.compose.ui.graphics.Color(0xFF2196F3)),  // Blue
+                    Triple("Recycle Bin", Icons.Filled.Delete, androidx.compose.ui.graphics.Color(0xFF607D8B)),  // Grey
+                    Triple("Safe Folder", Icons.Filled.Lock, androidx.compose.ui.graphics.Color(0xFF4CAF50))     // Green
+                )
+                
+                val actions = listOf(
+                    { onNavigateToFileExplorer(null) },
+                    { 
+                         val downloadPath = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS).absolutePath
+                         onNavigateToFileExplorer(downloadPath)
+                    },
+                    onNavigateToRecycleBin,
+                    onNavigateToSafeFolder
+                )
+
+                items(gridData.size) { index ->
+                    val item = gridData[index]
+                    val action = actions[index]
+                    
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(8.dp).clickable(onClick = action)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        androidx.compose.foundation.layout.Box(
+                             modifier = Modifier
+                                 .size(56.dp)
+                                 .background(item.third, androidx.compose.foundation.shape.CircleShape),
+                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(item.second, contentDescription = item.first, tint = androidx.compose.ui.graphics.Color(0xFFFF9800), modifier = Modifier.size(32.dp))
-                            Spacer(Modifier.height(8.dp))
-                            Text(item.first, style = androidx.compose.material3.MaterialTheme.typography.bodySmall, maxLines = 1)
+                             Icon(item.second, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(32.dp))
                         }
+                        Spacer(Modifier.height(8.dp))
+                        Text(item.first, style = androidx.compose.material3.MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
