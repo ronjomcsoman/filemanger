@@ -175,7 +175,7 @@ fun SafeFolderScreen(
                             )
                         }
                     ) {
-                        Icon(androidx.compose.material.icons.filled.Fingerprint, contentDescription = null)
+                        Icon(Icons.Default.Fingerprint, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text("Use Biometrics")
                     }

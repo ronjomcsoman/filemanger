@@ -25,7 +25,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             title = { Text("About FileExplorer") },
             text = {
                 Column {
-                    Text("Developer: MCS IT Team", style = androidx.compose.material3.MaterialTheme.typography.bodyLarge)
+                    Text("Developer: techwithron", style = androidx.compose.material3.MaterialTheme.typography.bodyLarge)
                     Spacer(Modifier.height(8.dp))
                     Text("A modern, powerful file manager designed with security and simplicity in mind.", style = androidx.compose.material3.MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.height(16.dp))
