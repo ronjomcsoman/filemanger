@@ -55,8 +55,9 @@ class RecycleBinRepository {
                     if (originalPath != null) {
                         val originalFile = File(originalPath)
                         // Ensure parent exists
-                        if (!originalFile.parentFile.exists()) {
-                            originalFile.parentFile.mkdirs()
+                        val parentFile = originalFile.parentFile
+                        if (parentFile != null && !parentFile.exists()) {
+                            parentFile.mkdirs()
                         }
                         
                         if (file.renameTo(originalFile)) {

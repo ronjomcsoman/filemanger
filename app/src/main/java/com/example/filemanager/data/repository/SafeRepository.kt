@@ -32,7 +32,7 @@ class SafeRepository {
         }
     }
 
-    suspend fun removeFromSafe(fileItem: FileItem, originalPath: String? = null): Boolean {
+    suspend fun removeFromSafe(fileItem: FileItem): Boolean {
         // Restore to default download or root if original path not tracked (simplified)
         return withContext(Dispatchers.IO) {
             try {
