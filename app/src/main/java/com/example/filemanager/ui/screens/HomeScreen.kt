@@ -38,7 +38,7 @@ import android.widget.Toast
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onNavigateToFileExplorer: () -> Unit,
+    onNavigateToFileExplorer: (String?) -> Unit,
     onNavigateToRecycleBin: () -> Unit,
     onNavigateToSafeFolder: () -> Unit
 ) {
@@ -153,16 +153,10 @@ fun HomeScreen(
             }
         ) { paddingValues ->
             val gridItems = listOf(
-                Triple("Main Storage", Icons.Filled.Storage, onNavigateToFileExplorer),
+                Triple("Main Storage", Icons.Filled.Storage, { onNavigateToFileExplorer(null) }),
                 Triple("Downloads", Icons.Filled.Download, { 
-                     onNavigateToFileExplorer() // Re-use main explorer but navigate programmatically if supported
-                     // For now, if we can't pass args easily, we might need a separate route or simple Intent
-                     // Simplest MVP: Open Main Storage at /Download
                      val downloadPath = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS).absolutePath
-                     // TODO: Modify FileExplorerScreen to accept initial path. 
-                     // Since we can't easily change signature, let's just use Main Storage navigation for now 
-                     // and assume user navigates. 
-                     // BETTER: Send Intent to open system download manager or handle in FileExplorerScreen
+                     onNavigateToFileExplorer(downloadPath)
                 }),
                 Triple("Recycle Bin", Icons.Filled.Delete, onNavigateToRecycleBin),
                 Triple("Safe Folder", Icons.Filled.Lock, onNavigateToSafeFolder)

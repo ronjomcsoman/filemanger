@@ -47,14 +47,33 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 
+import androidx.activity.compose.BackHandler
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun FileExplorerScreen(
+    initialPath: String? = null,
     onBack: () -> Unit,
     viewModel: FileExplorerViewModel = viewModel()
 ) {
+    // Initialize with path if provided and not already set
+    androidx.compose.runtime.LaunchedEffect(initialPath) {
+        if (initialPath != null && viewModel.currentPath.value == null) {
+            viewModel.loadFiles(initialPath)
+        } else if (viewModel.currentPath.value == null) {
+            viewModel.loadFiles(null)
+        }
+    }
+
     val files by viewModel.files.collectAsState()
     val currentPath by viewModel.currentPath.collectAsState()
+
+    // Handle Back Press
+    BackHandler {
+        if (!viewModel.navigateUp()) {
+            onBack()
+        }
+    }
 
     var showRenameDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }

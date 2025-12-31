@@ -23,9 +23,9 @@ class FileExplorerViewModel : ViewModel() {
     private val _currentPath = MutableStateFlow<String?>(null)
     val currentPath: StateFlow<String?> = _currentPath
 
-    init {
-        loadFiles(null)
-    }
+    // init {
+    //    loadFiles(null)
+    // }
 
     fun loadFiles(path: String?) {
         viewModelScope.launch {
