@@ -81,7 +81,7 @@ class MainActivity : ComponentActivity() {
                             }
                             
                             // Lifecycle observer to refresh state when returning from settings
-                            val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+                            val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
                             DisposableEffect(lifecycleOwner) {
                                 val observer = LifecycleEventObserver { _, event ->
                                     if (event == Lifecycle.Event.ON_RESUME) {
