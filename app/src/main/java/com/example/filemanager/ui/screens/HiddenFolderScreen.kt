@@ -34,14 +34,17 @@ fun HiddenFolderScreen(
 
     LaunchedEffect(Unit) {
         if (!isUnlocked) {
-            BiometricHelper.showBiometricPrompt(
-                context as androidx.fragment.app.FragmentActivity,
-                onSuccess = {
-                    isUnlocked = true
-                    items = HiddenFolderHelper.listFiles(context)
-                },
-                onError = { _, _ -> onBack() }
-            )
+            val activity = context as? androidx.fragment.app.FragmentActivity
+            if (activity != null) {
+                BiometricHelper.authenticate(
+                    activity,
+                    onSuccess = {
+                        isUnlocked = true
+                        items = HiddenFolderHelper.listFiles(context)
+                    },
+                    onError = { onBack() }
+                )
+            }
         }
     }
 
@@ -63,14 +66,17 @@ fun HiddenFolderScreen(
                     Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(64.dp))
                     Text("Locked", style = MaterialTheme.typography.headlineSmall)
                     Button(onClick = {
-                        BiometricHelper.showBiometricPrompt(
-                            context as androidx.fragment.app.FragmentActivity,
-                            onSuccess = {
-                                isUnlocked = true
-                                items = HiddenFolderHelper.listFiles(context)
-                            },
-                            onError = { _, _ -> }
-                        )
+                        val activity = context as? androidx.fragment.app.FragmentActivity
+                        if (activity != null) {
+                            BiometricHelper.authenticate(
+                                activity,
+                                onSuccess = {
+                                    isUnlocked = true
+                                    items = HiddenFolderHelper.listFiles(context)
+                                },
+                                onError = { }
+                            )
+                        }
                     }) {
                         Text("Unlock")
                     }
