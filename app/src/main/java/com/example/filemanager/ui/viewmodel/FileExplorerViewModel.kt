@@ -81,8 +81,12 @@ class FileExplorerViewModel : ViewModel() {
         }
     }
     
-    fun filterByCategory(category: String) {
-        viewModelScope.launch {
+            if (category == "Search") {
+                _searchQuery.value = "" // Reset search
+                _currentPath.value = "Global Search"
+                return@launch
+            }
+            
             val extensions = when (category) {
                 "Photo" -> setOf("jpg", "jpeg", "png", "gif", "webp")
                 "Video" -> setOf("mp4", "mkv", "avi", "mov")

@@ -145,17 +145,10 @@ fun HomeScreen(
                     },
                     actions = {
                         IconButton(onClick = {
-                            scope.launch {
-                                val url = updateManager.checkForUpdate()
-                                if (url != null) {
-                                    updateUrl = url
-                                    showUpdateDialog = true
-                                } else {
-                                    Toast.makeText(context, "No updates found", Toast.LENGTH_SHORT).show()
-                                }
-                            }
+                            // Trigger search - for now navigate search mode
+                            onNavigateToCategory("Search") 
                         }) {
-                            Icon(Icons.Filled.Refresh, contentDescription = "Check Update", tint = androidx.compose.ui.graphics.Color.White)
+                            Icon(Icons.Filled.Search, contentDescription = "Search", tint = androidx.compose.ui.graphics.Color.White)
                         }
                     }
                 )
@@ -178,7 +171,12 @@ fun HomeScreen(
                     androidx.compose.material3.Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(280.dp),
+                            .height(280.dp)
+                            .clickable { 
+                                // Navigate to root or main storage
+                                val path = if (com.example.filemanager.utils.RootUtils.isRootAvailable()) "/" else null
+                                onNavigateToFileExplorer(path)
+                            },
                         colors = androidx.compose.material3.CardDefaults.cardColors(
                             containerColor = androidx.compose.ui.graphics.Color(0xFF00bcd4) // Cyan style
                         ),
