@@ -107,6 +107,7 @@ fun SafeFolderScreen(
                         onClick = {}, // Handle open in safe logic
                         onLongClick = {},
                         onRename = {}, // No rename in safe for now
+                        onMoveToSafe = {},
                         onDelete = { viewModel.removeFromSafe(file) } // Use "Delete" icon to restore/remove
                     )
                 }

@@ -8,6 +8,7 @@ import com.example.filemanager.ui.screens.HomeScreen
 import com.example.filemanager.ui.screens.FileExplorerScreen
 
 import com.example.filemanager.ui.screens.SafeFolderScreen
+import com.example.filemanager.ui.screens.RecycleBinScreen
 
 sealed class Screen(val route: String) {
     object Home : Screen("home")
