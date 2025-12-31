@@ -46,7 +46,6 @@ fun HomeScreen(
     val updateManager = remember { com.example.filemanager.data.UpdateManager(context) }
     var updateUrl by remember { mutableStateOf<String?>(null) }
     var showUpdateDialog by remember { mutableStateOf(false) }
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     // Storage Stats
     var storageStats by remember { mutableStateOf<Pair<Long, Long>?>(null) }
@@ -91,7 +90,7 @@ fun HomeScreen(
             androidx.compose.material3.ModalDrawerSheet {
                 Spacer(Modifier.height(16.dp))
                 Text("FileExplorer", modifier = Modifier.padding(16.dp), style = androidx.compose.material3.MaterialTheme.typography.headlineSmall)
-                androidx.compose.material3.HorizontalDivider()
+                androidx.compose.material3.Divider()
                 
                 androidx.compose.material3.NavigationDrawerItem(
                     label = { Text("Home") },
@@ -132,7 +131,7 @@ fun HomeScreen(
                     ),
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(androidx.compose.material.icons.filled.Menu, contentDescription = "Menu", tint = androidx.compose.ui.graphics.Color.White)
+                            Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = androidx.compose.ui.graphics.Color.White)
                         }
                     },
                     actions = {
