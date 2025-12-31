@@ -12,6 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import kotlinx.coroutines.launch
+import android.widget.Toast
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,7 +57,7 @@ fun HomeScreen(
                                 updateUrl = url
                                 showUpdateDialog = true
                             } else {
-                                androidx.widget.Toast.makeText(context, "No updates found", androidx.widget.Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "No updates found", Toast.LENGTH_SHORT).show()
                             }
                         }
                     }) {
