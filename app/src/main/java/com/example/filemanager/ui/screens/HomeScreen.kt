@@ -46,6 +46,7 @@ fun HomeScreen(
     val updateManager = remember { com.example.filemanager.data.UpdateManager(context) }
     var updateUrl by remember { mutableStateOf<String?>(null) }
     var showUpdateDialog by remember { mutableStateOf(false) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     // Storage Stats
     var storageStats by remember { mutableStateOf<Pair<Long, Long>?>(null) }
@@ -82,7 +83,6 @@ fun HomeScreen(
     }
 
     val drawerState = androidx.compose.material3.rememberDrawerState(initialValue = androidx.compose.material3.DrawerValue.Closed)
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     androidx.compose.material3.ModalNavigationDrawer(
         drawerState = drawerState,
