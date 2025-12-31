@@ -11,8 +11,10 @@ class FileRepository {
     suspend fun getFiles(path: String?): List<FileItem> {
         return withContext(Dispatchers.IO) {
             val directory = if (path != null) File(path) else Environment.getExternalStorageDirectory()
+            val isRestricted = path?.contains("Android/data") == true || path?.contains("Android/obb") == true
             
-            if (directory.exists() && directory.isDirectory) {
+            // Try standard listing first
+            var files = if (directory.exists() && directory.isDirectory && !isRestricted) {
                 directory.listFiles()?.map { file ->
                     FileItem(
                         file = file,
@@ -22,10 +24,20 @@ class FileRepository {
                         size = if (file.isDirectory) 0 else file.length(),
                         lastModified = file.lastModified()
                     )
-                }?.sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() })) ?: emptyList()
+                } ?: emptyList()
             } else {
                 emptyList()
             }
+
+            // Fallback to RootUtils if empty and potentially restricted or root available
+            if ((files.isEmpty() || isRestricted) && com.example.filemanager.utils.RootUtils.isRootAvailable()) {
+                val rootFiles = com.example.filemanager.utils.RootUtils.listFiles(directory.absolutePath)
+                if (rootFiles.isNotEmpty()) {
+                    files = rootFiles
+                }
+            }
+
+            files.sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
         }
     }
 
