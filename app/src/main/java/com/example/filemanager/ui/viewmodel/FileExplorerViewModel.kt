@@ -80,7 +80,8 @@ class FileExplorerViewModel : ViewModel() {
             // Handle file open logic later
         }
     }
-    
+    fun filterByCategory(category: String) {
+        viewModelScope.launch {
             if (category == "Search") {
                 _searchQuery.value = "" // Reset search
                 _currentPath.value = "Global Search"
@@ -120,9 +121,7 @@ class FileExplorerViewModel : ViewModel() {
                 }
             }
             
-            // This scan might be slow for full disk, ideally use MediaStore
-            // For now, let's use a simpler approach or MediaStore if possible
-            // Reusing allFiles if already loaded or scanning root
+            scan(root)
             
             _files.value = allFilesInCategory
             _currentPath.value = "Category: $category"
