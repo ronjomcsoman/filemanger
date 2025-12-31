@@ -34,8 +34,14 @@ class RecycleBinRepository {
                     writer.write(file.absolutePath)
                 }
 
-                // Move file
-                file.renameTo(destFile)
+                // Try safe move, fallback to copy+delete
+                var success = file.renameTo(destFile)
+                if (!success) {
+                    file.copyTo(destFile, overwrite = true)
+                    success = file.delete()
+                }
+
+                success
             } catch (e: Exception) {
                 e.printStackTrace()
                 false
