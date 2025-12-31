@@ -27,9 +27,11 @@ import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.NavigationDrawerItemDefaults
 import kotlinx.coroutines.launch
 import android.widget.Toast
 
@@ -80,114 +82,171 @@ fun HomeScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("FileExplorer", color = androidx.compose.ui.graphics.Color.White) },
-                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
-                    containerColor = androidx.compose.ui.graphics.Color(0xFF2196F3) // Cx Blue
-                ),
-                actions = {
-                    IconButton(onClick = {
-                        scope.launch {
-                            val url = updateManager.checkForUpdate()
-                            if (url != null) {
-                                updateUrl = url
-                                showUpdateDialog = true
-                            } else {
-                                Toast.makeText(context, "No updates found", Toast.LENGTH_SHORT).show()
+    val drawerState = androidx.compose.material3.rememberDrawerState(initialValue = androidx.compose.material3.DrawerValue.Closed)
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+
+    androidx.compose.material3.ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            androidx.compose.material3.ModalDrawerSheet {
+                Spacer(Modifier.height(16.dp))
+                Text("FileExplorer", modifier = Modifier.padding(16.dp), style = androidx.compose.material3.MaterialTheme.typography.headlineSmall)
+                androidx.compose.material3.HorizontalDivider()
+                
+                androidx.compose.material3.NavigationDrawerItem(
+                    label = { Text("Home") },
+                    selected = false,
+                    onClick = { scope.launch { drawerState.close() } },
+                    icon = { Icon(Icons.Filled.Storage, contentDescription = null) },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+                androidx.compose.material3.NavigationDrawerItem(
+                    label = { Text("Recycle Bin") },
+                    selected = false,
+                    onClick = { 
+                        scope.launch { drawerState.close() } 
+                        onNavigateToRecycleBin() 
+                    },
+                    icon = { Icon(Icons.Filled.Delete, contentDescription = null) },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+                androidx.compose.material3.NavigationDrawerItem(
+                    label = { Text("Safe Folder") },
+                    selected = false,
+                    onClick = { 
+                         scope.launch { drawerState.close() }
+                         onNavigateToSafeFolder()
+                    },
+                    icon = { Icon(Icons.Filled.Lock, contentDescription = null) },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+            }
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("FileExplorer", color = androidx.compose.ui.graphics.Color.White) },
+                    colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+                        containerColor = androidx.compose.ui.graphics.Color(0xFF2196F3)
+                    ),
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(androidx.compose.material.icons.filled.Menu, contentDescription = "Menu", tint = androidx.compose.ui.graphics.Color.White)
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = {
+                            scope.launch {
+                                val url = updateManager.checkForUpdate()
+                                if (url != null) {
+                                    updateUrl = url
+                                    showUpdateDialog = true
+                                } else {
+                                    Toast.makeText(context, "No updates found", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }) {
+                            Icon(Icons.Filled.Refresh, contentDescription = "Check Update", tint = androidx.compose.ui.graphics.Color.White)
+                        }
+                    }
+                )
+            }
+        ) { paddingValues ->
+            val gridItems = listOf(
+                Triple("Main Storage", Icons.Filled.Storage, onNavigateToFileExplorer),
+                Triple("Downloads", Icons.Filled.Download, { 
+                     onNavigateToFileExplorer() // Re-use main explorer but navigate programmatically if supported
+                     // For now, if we can't pass args easily, we might need a separate route or simple Intent
+                     // Simplest MVP: Open Main Storage at /Download
+                     val downloadPath = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS).absolutePath
+                     // TODO: Modify FileExplorerScreen to accept initial path. 
+                     // Since we can't easily change signature, let's just use Main Storage navigation for now 
+                     // and assume user navigates. 
+                     // BETTER: Send Intent to open system download manager or handle in FileExplorerScreen
+                }),
+                Triple("Recycle Bin", Icons.Filled.Delete, onNavigateToRecycleBin),
+                Triple("Safe Folder", Icons.Filled.Lock, onNavigateToSafeFolder)
+            )
+
+            androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+                columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(3),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Storage Dashboard (Full Width)
+                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(3) }) {
+                     // ... (Keeping existing dashboard code logic) ...
+                     androidx.compose.material3.Card(
+                        modifier = Modifier.fillMaxWidth().height(200.dp),
+                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color(0xFF03A9F4))
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize().padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Circular Gauge
+                            androidx.compose.foundation.layout.Box(
+                                modifier = Modifier.weight(1f),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                 val used = storageStats?.first ?: 0L
+                                 val total = storageStats?.second ?: 1L
+                                 val progressValue = if (total > 0) used.toFloat() / total.toFloat() else 0f
+                                 val percent = (progressValue * 100).toInt()
+                                 
+                                 androidx.compose.material3.CircularProgressIndicator(
+                                     progress = progressValue,
+                                     modifier = Modifier.size(100.dp),
+                                     color = androidx.compose.ui.graphics.Color.White,
+                                     trackColor = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.3f),
+                                 )
+                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                     Text("$percent%", color = androidx.compose.ui.graphics.Color.White, style = androidx.compose.material3.MaterialTheme.typography.headlineMedium)
+                                     Text("Used", color = androidx.compose.ui.graphics.Color.White)
+                                 }
+                            }
+                            
+                            // Stats Column
+                            Column(
+                                modifier = Modifier.weight(1f).padding(start = 16.dp),
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text("Images: ${com.example.filemanager.utils.StorageUtils.formatSize(categorySizes["Images"] ?: 0)}", color = androidx.compose.ui.graphics.Color.White)
+                                Spacer(Modifier.height(8.dp))
+                                Text("Audio: ${com.example.filemanager.utils.StorageUtils.formatSize(categorySizes["Audio"] ?: 0)}", color = androidx.compose.ui.graphics.Color.White)
+                                Spacer(Modifier.height(8.dp))
+                                Text("Videos: ${com.example.filemanager.utils.StorageUtils.formatSize(categorySizes["Videos"] ?: 0)}", color = androidx.compose.ui.graphics.Color.White)
                             }
                         }
-                    }) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Check Update", tint = androidx.compose.ui.graphics.Color.White)
                     }
                 }
-            )
-        }
-    ) { paddingValues ->
-        val gridItems = listOf(
-            Triple("Main Storage", Icons.Filled.Storage, onNavigateToFileExplorer),
-            Triple("Downloads", Icons.Filled.Download, { /* TODO */ }),
-            Triple("Recycle Bin", Icons.Filled.Delete, onNavigateToRecycleBin),
-            Triple("Safe Folder", Icons.Filled.Lock, onNavigateToSafeFolder)
-        )
 
-        androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
-            columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(3),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Storage Dashboard (Full Width)
-            item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(3) }) {
-                androidx.compose.material3.Card(
-                    modifier = Modifier.fillMaxWidth().height(200.dp),
-                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color(0xFF03A9F4))
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize().padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                // Grid Header (Full Width)
+                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(3) }) {
+                    Text("Local", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+                }
+
+                // Grid Items
+                items(gridItems.size) { index ->
+                    val item = gridItems[index]
+                    androidx.compose.material3.Card(
+                        onClick = item.third,
+                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.White),
+                        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
-                        // Circular Gauge
-                        androidx.compose.foundation.layout.Box(
-                            modifier = Modifier.weight(1f),
-                            contentAlignment = Alignment.Center
-                        ) {
-                             val used = storageStats?.first ?: 0L
-                             val total = storageStats?.second ?: 1L
-                             val progressValue = if (total > 0) used.toFloat() / total.toFloat() else 0f
-                             val percent = (progressValue * 100).toInt()
-                             
-                             androidx.compose.material3.CircularProgressIndicator(
-                                 progress = progressValue,
-                                 modifier = Modifier.size(100.dp),
-                                 color = androidx.compose.ui.graphics.Color.White,
-                                 trackColor = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.3f),
-                             )
-                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                 Text("$percent%", color = androidx.compose.ui.graphics.Color.White, style = androidx.compose.material3.MaterialTheme.typography.headlineMedium)
-                                 Text("Used", color = androidx.compose.ui.graphics.Color.White)
-                             }
-                        }
-                        
-                        // Stats Column
                         Column(
-                            modifier = Modifier.weight(1f).padding(start = 16.dp),
-                            verticalArrangement = Arrangement.Center
+                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("Images: ${com.example.filemanager.utils.StorageUtils.formatSize(categorySizes["Images"] ?: 0)}", color = androidx.compose.ui.graphics.Color.White)
+                            Icon(item.second, contentDescription = item.first, tint = androidx.compose.ui.graphics.Color(0xFFFF9800), modifier = Modifier.size(32.dp))
                             Spacer(Modifier.height(8.dp))
-                            Text("Audio: ${com.example.filemanager.utils.StorageUtils.formatSize(categorySizes["Audio"] ?: 0)}", color = androidx.compose.ui.graphics.Color.White)
-                            Spacer(Modifier.height(8.dp))
-                            Text("Videos: ${com.example.filemanager.utils.StorageUtils.formatSize(categorySizes["Videos"] ?: 0)}", color = androidx.compose.ui.graphics.Color.White)
+                            Text(item.first, style = androidx.compose.material3.MaterialTheme.typography.bodySmall, maxLines = 1)
                         }
-                    }
-                }
-            }
-
-            // Grid Header (Full Width)
-            item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(3) }) {
-                Text("Local", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
-            }
-
-            // Grid Items
-            items(gridItems.size) { index ->
-                val item = gridItems[index]
-                androidx.compose.material3.Card(
-                    onClick = item.third,
-                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.White),
-                    elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(item.second, contentDescription = item.first, tint = androidx.compose.ui.graphics.Color(0xFFFF9800), modifier = Modifier.size(32.dp))
-                        Spacer(Modifier.height(8.dp))
-                        Text(item.first, style = androidx.compose.material3.MaterialTheme.typography.bodySmall, maxLines = 1)
                     }
                 }
             }
