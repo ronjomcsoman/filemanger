@@ -16,16 +16,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.*
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -131,59 +136,91 @@ fun FileExplorerScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     var showSortMenu by remember { mutableStateOf(false) }
 
+    val currentCategory by viewModel.currentCategory.collectAsState()
+    val viewMode by viewModel.viewMode.collectAsState()
+    val activeFilter by viewModel.activeFilter.collectAsState()
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    if (isSearching) {
-                        OutlinedTextField(
-                            value = searchQuery,
-                            onValueChange = { viewModel.updateSearchQuery(it) },
-                            placeholder = { Text("Search files...") },
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                            singleLine = true,
-                            colors = TextFieldDefaults.outlinedTextFieldColors(
-                                containerColor = Color.Transparent,
-                                focusedBorderColor = Color.Transparent,
-                                unfocusedBorderColor = Color.Transparent
-                            )
+            Column(
+                modifier = Modifier
+                    .background(Color(0xFF0097A7)) // Cyan/Teal background
+                    .padding(bottom = 16.dp)
+                    .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
+                    .background(Color(0xFF00acc1))
+            ) {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = when {
+                                category != null -> category
+                                initialPath != null -> "Internal Storage"
+                                else -> "File Explorer"
+                            },
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
                         )
-                    } else {
-                        Text(text = currentPath?.let { File(it).name } ?: "Internal Storage")
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        if (isSearching) {
-                            isSearching = false
-                            viewModel.updateSearchQuery("")
-                        } else if (!viewModel.navigateUp()) {
-                            onBack()
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            if (!viewModel.navigateUp()) {
+                                onBack()
+                            }
+                        }) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                         }
-                    }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { isSearching = !isSearching }) {
-                        Icon(imageVector = Icons.Filled.Search, contentDescription = "Search")
-                    }
-                    IconButton(onClick = { showSortMenu = true }) {
-                        Icon(imageVector = Icons.Filled.Sort, contentDescription = "Sort")
-                    }
-                    DropdownMenu(
-                        expanded = showSortMenu,
-                        onDismissRequest = { showSortMenu = false }
+                    },
+                    actions = {
+                        IconButton(onClick = { /* Search */ }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.White)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                )
+
+                // Breadcrumbs or Category Tabs
+                if (category == null) {
+                    // Breadcrumbs for Internal Storage
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        DropdownMenuItem(text = { Text("Name (A-Z)") }, onClick = { viewModel.updateSortOption(com.example.filemanager.ui.viewmodel.SortOption.NAME_ASC); showSortMenu = false })
-                        DropdownMenuItem(text = { Text("Name (Z-A)") }, onClick = { viewModel.updateSortOption(com.example.filemanager.ui.viewmodel.SortOption.NAME_DESC); showSortMenu = false })
-                        DropdownMenuItem(text = { Text("Size (Asc)") }, onClick = { viewModel.updateSortOption(com.example.filemanager.ui.viewmodel.SortOption.SIZE_ASC); showSortMenu = false })
-                        DropdownMenuItem(text = { Text("Size (Desc)") }, onClick = { viewModel.updateSortOption(com.example.filemanager.ui.viewmodel.SortOption.SIZE_DESC); showSortMenu = false })
-                        DropdownMenuItem(text = { Text("Date (Newest)") }, onClick = { viewModel.updateSortOption(com.example.filemanager.ui.viewmodel.SortOption.DATE_DESC); showSortMenu = false })
-                        DropdownMenuItem(text = { Text("Date (Oldest)") }, onClick = { viewModel.updateSortOption(com.example.filemanager.ui.viewmodel.SortOption.DATE_ASC); showSortMenu = false })
+                        Text("Home", color = Color.White.copy(alpha = 0.7f), modifier = Modifier.clickable { viewModel.loadFiles(null) })
+                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White.copy(alpha = 0.5f), modifier = Modifier.size(16.dp))
+                        Text(currentPath?.let { File(it).name } ?: "Internal Storage", color = Color.White, fontWeight = FontWeight.Medium)
+                    }
+                } else if (category == "Photo" || category == "Video") {
+                    // Tabs for Media
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceAround
+                    ) {
+                        TabItem(text = "Images", active = viewMode == com.example.filemanager.ui.viewmodel.ViewMode.FILES) {
+                            viewModel.setViewMode(com.example.filemanager.ui.viewmodel.ViewMode.FILES)
+                        }
+                        TabItem(text = "Albums", active = viewMode == com.example.filemanager.ui.viewmodel.ViewMode.ALBUMS) {
+                            viewModel.setViewMode(com.example.filemanager.ui.viewmodel.ViewMode.ALBUMS)
+                        }
+                    }
+                } else if (category == "Document") {
+                    // Filters for Documents
+                    val filters = listOf("All", "Pdf", "Word", "Excel", "PPT", "Other")
+                    LazyRow(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(filters) { filter ->
+                            FilterChip(text = filter, active = activeFilter == filter) {
+                                viewModel.setFilter(filter)
+                            }
+                        }
                     }
                 }
-            )
+            }
         }
     ) { paddingValues ->
         LazyColumn(
@@ -216,6 +253,48 @@ fun FileExplorerScreen(
     }
 }
 
+@Composable
+fun TabItem(text: String, active: Boolean, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = text,
+            color = if (active) Color.White else Color.White.copy(alpha = 0.6f),
+            fontWeight = if (active) FontWeight.Bold else FontWeight.Normal
+        )
+        if (active) {
+            Box(
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .width(40.dp)
+                    .height(2.dp)
+                    .background(Color.White)
+            )
+        }
+    }
+}
+
+@Composable
+fun FilterChip(text: String, active: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        color = if (active) Color.White.copy(alpha = 0.2f) else Color.Transparent,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.padding(vertical = 4.dp)
+    ) {
+        Text(
+            text = text,
+            color = Color.White,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FileItemRow(
@@ -228,58 +307,78 @@ fun FileItemRow(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    Box {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .combinedClickable(
-                    onClick = onClick,
-                    onLongClick = {
-                        expanded = true
-                        onLongClick()
-                    }
-                )
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = if (file.isDirectory) Icons.Default.Folder else Icons.Default.Description,
-                contentDescription = if (file.isDirectory) "Folder" else "File",
-                tint = if (file.isDirectory) MaterialTheme.colorScheme.primary else Color.Gray,
-                modifier = Modifier.padding(end = 16.dp)
-            )
-            Column {
-                Text(text = file.name, style = MaterialTheme.typography.bodyLarge)
-                if (!file.isDirectory) {
-                    Text(text = "${file.size} bytes", style = MaterialTheme.typography.bodySmall)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = {
+                    expanded = true
+                    onLongClick()
                 }
+            )
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Thumbnail or Icon
+        if (file.isDirectory) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(Color(0xFFFFF9C4), RoundedCornerShape(8.dp)), // Light yellow for folders
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Folder, contentDescription = null, tint = Color(0xFFFBC02D), modifier = Modifier.size(32.dp))
+            }
+        } else {
+            // Document icons or basic file icon
+            val icon = when (file.extension.lowercase()) {
+                "pdf" -> Icons.Default.PictureAsPdf
+                "doc", "docx" -> Icons.Default.Description
+                "apk" -> Icons.Default.Android
+                else -> Icons.Default.InsertDriveFile
+            }
+            val tint = when (file.extension.lowercase()) {
+                "pdf" -> Color.Red
+                "apk" -> Color(0xFF4CAF50)
+                else -> Color.Gray
+            }
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(28.dp))
             }
         }
+
+        Spacer(Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = file.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+            Text(
+                text = if (file.isDirectory) "${file.itemCount} Files" else "${android.text.format.Formatter.formatShortFileSize(androidx.compose.ui.platform.LocalContext.current, file.size)} • ${file.formattedDate}",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
+        }
+
+        if (file.isDirectory) {
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
+        } else {
+            IconButton(onClick = { expanded = true }) {
+                Icon(Icons.Default.MoreVert, contentDescription = "Menu", tint = Color.Gray)
+            }
+        }
+
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
-            DropdownMenuItem(
-                text = { Text("Rename") },
-                onClick = {
-                    expanded = false
-                    onRename()
-                }
-            )
-            DropdownMenuItem(
-                text = { Text("Move to Safe Folder") },
-                onClick = {
-                    expanded = false
-                    onMoveToSafe()
-                }
-            )
-            DropdownMenuItem(
-                text = { Text("Delete") },
-                onClick = {
-                    expanded = false
-                    onDelete()
-                }
-            )
+            DropdownMenuItem(text = { Text("Rename") }, onClick = { expanded = false; onRename() })
+            DropdownMenuItem(text = { Text("Move to Safe Folder") }, onClick = { expanded = false; onMoveToSafe() })
+            DropdownMenuItem(text = { Text("Delete") }, onClick = { expanded = false; onDelete() })
         }
     }
 }

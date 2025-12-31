@@ -9,8 +9,13 @@ data class FileItem(
     val path: String,
     val isDirectory: Boolean,
     val size: Long,
-    val lastModified: Long
+    val lastModified: Long,
+    val itemCount: Int = 0,
+    val mimeType: String? = null
 ) {
     val formattedDate: String
-        get() = Date(lastModified).toString() // Simplify for now, use proper formatter later
+        get() = android.text.format.DateFormat.format("dd-MM-yyyy hh:mm a", lastModified).toString()
+        
+    val extension: String
+        get() = name.substringAfterLast('.', "")
 }

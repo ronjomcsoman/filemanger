@@ -1,6 +1,5 @@
-package com.example.filemanager.ui.viewmodel
-
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.filemanager.data.model.FileItem
 import com.example.filemanager.data.repository.FileRepository
@@ -12,8 +11,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 
-class FileExplorerViewModel : ViewModel() {
-    private val repository = FileRepository()
+class FileExplorerViewModel(application: Application) : AndroidViewModel(application) {
+    private val repository = FileRepository(application)
     private val recycleBinRepository = RecycleBinRepository()
     private val safeRepository = SafeRepository()
     
@@ -28,6 +27,15 @@ class FileExplorerViewModel : ViewModel() {
 
     private val _sortOption = MutableStateFlow(SortOption.NAME_ASC)
     val sortOption: StateFlow<SortOption> = _sortOption.asStateFlow()
+
+    private val _currentCategory = MutableStateFlow<String?>(null)
+    val currentCategory: StateFlow<String?> = _currentCategory.asStateFlow()
+
+    private val _viewMode = MutableStateFlow(ViewMode.FILES) // FILES or ALBUMS
+    val viewMode: StateFlow<ViewMode> = _viewMode.asStateFlow()
+
+    private val _activeFilter = MutableStateFlow("All") // For Documents
+    val activeFilter: StateFlow<String> = _activeFilter.asStateFlow()
 
     private var allFiles: List<FileItem> = emptyList()
 
@@ -82,49 +90,45 @@ class FileExplorerViewModel : ViewModel() {
     }
     fun filterByCategory(category: String) {
         viewModelScope.launch {
+            _currentCategory.value = category
+            _currentPath.value = "Category: $category"
+            
             if (category == "Search") {
-                _searchQuery.value = "" // Reset search
-                _currentPath.value = "Global Search"
+                _searchQuery.value = ""
                 return@launch
             }
             
-            val extensions = when (category) {
-                "Photo" -> setOf("jpg", "jpeg", "png", "gif", "webp")
-                "Video" -> setOf("mp4", "mkv", "avi", "mov")
-                "Audio" -> setOf("mp3", "wav", "aac", "ogg")
-                "Document" -> setOf("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt")
-                "Archive" -> setOf("zip", "rar", "7z", "tar")
-                "APK" -> setOf("apk")
-                else -> emptySet()
-            }
-            
-            // Load from root or current path and filter
-            val root = android.os.Environment.getExternalStorageDirectory()
-            val allFilesInCategory = mutableListOf<FileItem>()
-            
-            fun scan(dir: File) {
-                val list = dir.listFiles() ?: return
-                for (file in list) {
-                    if (file.name.startsWith(".")) continue
-                    if (file.isDirectory) {
-                        scan(file)
-                    } else if (extensions.contains(file.extension.lowercase())) {
-                        allFilesInCategory.add(FileItem(
-                            file = file,
-                            name = file.name,
-                            path = file.absolutePath,
-                            isDirectory = false,
-                            size = file.length(),
-                            lastModified = file.lastModified()
-                        ))
-                    }
+            val files = repository.getFilesByCategory(category)
+            allFiles = files
+            applyFilterAndSort()
+        }
+    }
+
+    fun setViewMode(mode: ViewMode) {
+        viewModelScope.launch {
+            _viewMode.value = mode
+            val category = _currentCategory.value
+            if (category != null) {
+                if (mode == ViewMode.ALBUMS) {
+                    allFiles = repository.getAlbums(category)
+                    _files.value = allFiles
+                } else {
+                    filterByCategory(category)
                 }
             }
-            
-            scan(root)
-            
-            _files.value = allFilesInCategory
-            _currentPath.value = "Category: $category"
+        }
+    }
+
+    fun setFilter(filter: String) {
+        _activeFilter.value = filter
+        // Logic to filter allFiles based on filter (e.g. PDF, Word)
+        viewModelScope.launch {
+             val filtered = if (filter == "All") {
+                 allFiles
+             } else {
+                 allFiles.filter { it.extension.equals(filter, ignoreCase = true) }
+             }
+             _files.value = filtered
         }
     }
 
@@ -169,4 +173,8 @@ class FileExplorerViewModel : ViewModel() {
 }
 enum class SortOption {
     NAME_ASC, NAME_DESC, SIZE_ASC, SIZE_DESC, DATE_ASC, DATE_DESC
+}
+
+enum class ViewMode {
+    FILES, ALBUMS
 }
