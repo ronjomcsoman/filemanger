@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -44,13 +46,55 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        ManageStoragePermissionHelper {
-                            val navController = rememberNavController()
-                            AppNavigation(navController = navController)
+                    // Permission Check Logic
+                    val context = LocalContext.current
+                    var hasPermission by remember {
+                        mutableStateOf(
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                Environment.isExternalStorageManager()
+                            } else {
+                                true // Handle legacy permissions elsewhere if needed
+                            }
+                        )
+                    }
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !hasPermission) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("Full File Access Required")
+                            Button(onClick = {
+                                try {
+                                    val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                                    intent.addCategory("android.intent.category.DEFAULT")
+                                    intent.data = Uri.parse(String.format("package:%s", context.packageName))
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    val intent = Intent()
+                                    intent.action = Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION
+                                    context.startActivity(intent)
+                                }
+                            }) {
+                                Text("Grant Permission")
+                            }
+                            
+                            // Lifecycle observer to refresh state when returning from settings
+                            val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+                            DisposableEffect(lifecycleOwner) {
+                                val observer = LifecycleEventObserver { _, event ->
+                                    if (event == Lifecycle.Event.ON_RESUME) {
+                                        hasPermission = Environment.isExternalStorageManager()
+                                    }
+                                }
+                                lifecycleOwner.lifecycle.addObserver(observer)
+                                onDispose {
+                                    lifecycleOwner.lifecycle.removeObserver(observer)
+                                }
+                            }
                         }
                     } else {
-                        // Fallback for older Android versions (Simplified for this task)
                         // Ideally checking READ_EXTERNAL_STORAGE here
                         val navController = rememberNavController()
                         AppNavigation(navController = navController)
