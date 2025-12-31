@@ -159,7 +159,6 @@ fun HomeScreen(
         ) { paddingValues ->
 
 
-        ) { paddingValues ->
             androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
                 columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(3),
                 modifier = Modifier
