@@ -58,4 +58,61 @@ class FileRepository {
             }
         }
     }
+
+    // Recycle bin directory (app private external storage)
+    private val recycleBinDir: File = File(Environment.getExternalStorageDirectory(), "recycle_bin")
+
+    init {
+        if (!recycleBinDir.exists()) {
+            recycleBinDir.mkdirs()
+        }
+    }
+
+    /**
+     * Move a file or directory to the recycle bin.
+     * Returns true if successful.
+     */
+    suspend fun moveToRecycleBin(file: File): Boolean {
+        return withContext(Dispatchers.IO) {
+            if (!recycleBinDir.exists()) return@withContext false
+            val dest = File(recycleBinDir, file.name)
+            val finalDest = if (dest.exists()) {
+                File(recycleBinDir, "${file.name}_" + System.currentTimeMillis())
+            } else dest
+            file.renameTo(finalDest)
+        }
+    }
+
+    /**
+     * List items in recycle bin.
+     */
+    suspend fun listRecycleBin(): List<FileItem> {
+        return withContext(Dispatchers.IO) {
+            if (!recycleBinDir.exists()) return@withContext emptyList<FileItem>()
+            recycleBinDir.listFiles()?.map { file ->
+                FileItem(
+                    file = file,
+                    name = file.name,
+                    path = file.absolutePath,
+                    isDirectory = file.isDirectory,
+                    size = if (file.isDirectory) 0 else file.length(),
+                    lastModified = file.lastModified()
+                )
+            } ?: emptyList()
+        }
+    }
+
+    /**
+     * Restore a file from recycle bin to a target directory.
+     */
+    suspend fun restoreFromRecycleBin(file: File, targetDir: File): Boolean {
+        return withContext(Dispatchers.IO) {
+            if (!targetDir.isDirectory) return@withContext false
+            val dest = File(targetDir, file.name)
+            val finalDest = if (dest.exists()) {
+                File(targetDir, "${file.name}_" + System.currentTimeMillis())
+            } else dest
+            file.renameTo(finalDest)
+        }
+    }
 }

@@ -23,15 +23,53 @@ class FileExplorerViewModel : ViewModel() {
     private val _currentPath = MutableStateFlow<String?>(null)
     val currentPath: StateFlow<String?> = _currentPath
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _sortOption = MutableStateFlow(SortOption.NAME_ASC)
+    val sortOption: StateFlow<SortOption> = _sortOption.asStateFlow()
+
+    private var allFiles: List<FileItem> = emptyList()
+
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+        applyFilterAndSort()
+    }
+
+    fun updateSortOption(option: SortOption) {
+        _sortOption.value = option
+        applyFilterAndSort()
+    }
+
+    private fun applyFilterAndSort() {
+        var filteredList = if (_searchQuery.value.isEmpty()) {
+            allFiles
+        } else {
+            allFiles.filter { it.name.contains(_searchQuery.value, ignoreCase = true) }
+        }
+
+        filteredList = when (_sortOption.value) {
+            SortOption.NAME_ASC -> filteredList.sortedBy { it.name.lowercase() }
+            SortOption.NAME_DESC -> filteredList.sortedByDescending { it.name.lowercase() }
+            SortOption.SIZE_ASC -> filteredList.sortedBy { it.size }
+            SortOption.SIZE_DESC -> filteredList.sortedByDescending { it.size }
+            SortOption.DATE_ASC -> filteredList.sortedBy { it.lastModified }
+            SortOption.DATE_DESC -> filteredList.sortedByDescending { it.lastModified }
+        }
+        
+        // Always show directories first
+        _files.value = filteredList.sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
+    }
+
     // init {
     //    loadFiles(null)
     // }
 
     fun loadFiles(path: String?) {
         viewModelScope.launch {
-            val fileList = repository.getFiles(path)
-            _files.value = fileList
+            allFiles = repository.getFiles(path)
             _currentPath.value = path
+            applyFilterAndSort()
         }
     }
 
@@ -81,4 +119,7 @@ class FileExplorerViewModel : ViewModel() {
             }
         }
     }
+}
+enum class SortOption {
+    NAME_ASC, NAME_DESC, SIZE_ASC, SIZE_DESC, DATE_ASC, DATE_DESC
 }

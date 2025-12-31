@@ -22,7 +22,10 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.ui.Alignment
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -120,17 +123,60 @@ fun FileExplorerScreen(
         )
     }
 
+    var isSearching by remember { mutableStateOf(false) }
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    var showSortMenu by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = currentPath?.let { File(it).name } ?: "Internal Storage") },
+                title = {
+                    if (isSearching) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { viewModel.updateSearchQuery(it) },
+                            placeholder = { Text("Search files...") },
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            singleLine = true,
+                            colors = TextFieldDefaults.outlinedTextFieldColors(
+                                containerColor = Color.Transparent,
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent
+                            )
+                        )
+                    } else {
+                        Text(text = currentPath?.let { File(it).name } ?: "Internal Storage")
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = {
-                        if (!viewModel.navigateUp()) {
+                        if (isSearching) {
+                            isSearching = false
+                            viewModel.updateSearchQuery("")
+                        } else if (!viewModel.navigateUp()) {
                             onBack()
                         }
                     }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { isSearching = !isSearching }) {
+                        Icon(imageVector = androidx.compose.material.icons.filled.Search, contentDescription = "Search")
+                    }
+                    IconButton(onClick = { showSortMenu = true }) {
+                        Icon(imageVector = androidx.compose.material.icons.filled.Sort, contentDescription = "Sort")
+                    }
+                    DropdownMenu(
+                        expanded = showSortMenu,
+                        onDismissRequest = { showSortMenu = false }
+                    ) {
+                        DropdownMenuItem(text = { Text("Name (A-Z)") }, onClick = { viewModel.updateSortOption(com.example.filemanager.ui.viewmodel.SortOption.NAME_ASC); showSortMenu = false })
+                        DropdownMenuItem(text = { Text("Name (Z-A)") }, onClick = { viewModel.updateSortOption(com.example.filemanager.ui.viewmodel.SortOption.NAME_DESC); showSortMenu = false })
+                        DropdownMenuItem(text = { Text("Size (Asc)") }, onClick = { viewModel.updateSortOption(com.example.filemanager.ui.viewmodel.SortOption.SIZE_ASC); showSortMenu = false })
+                        DropdownMenuItem(text = { Text("Size (Desc)") }, onClick = { viewModel.updateSortOption(com.example.filemanager.ui.viewmodel.SortOption.SIZE_DESC); showSortMenu = false })
+                        DropdownMenuItem(text = { Text("Date (Newest)") }, onClick = { viewModel.updateSortOption(com.example.filemanager.ui.viewmodel.SortOption.DATE_DESC); showSortMenu = false })
+                        DropdownMenuItem(text = { Text("Date (Oldest)") }, onClick = { viewModel.updateSortOption(com.example.filemanager.ui.viewmodel.SortOption.DATE_ASC); showSortMenu = false })
                     }
                 }
             )
